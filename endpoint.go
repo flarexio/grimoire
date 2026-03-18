@@ -10,27 +10,18 @@ import (
 type EndpointSet struct {
 	ListSkills   endpoint.Endpoint
 	SearchSkills endpoint.Endpoint
-	FindSkill     endpoint.Endpoint
-}
-
-type ListSkillsRequest struct {
-	Category string `json:"category" form:"category"`
+	FindSkill    endpoint.Endpoint
 }
 
 func ListSkillsEndpoint(svc Service) endpoint.Endpoint {
 	return func(ctx context.Context, request any) (any, error) {
-		req, ok := request.(ListSkillsRequest)
-		if !ok {
-			return nil, errors.New("invalid request type")
-		}
-
-		return svc.ListSkills(ctx, req.Category)
+		return svc.ListSkills(ctx)
 	}
 }
 
 type SearchSkillsRequest struct {
-	Query string `json:"query" form:"query"`
-	K     int    `json:"k,omitempty" form:"k"`
+	Query string `json:"query"`
+	K     int    `json:"k,omitempty"`
 }
 
 func SearchSkillsEndpoint(svc Service) endpoint.Endpoint {
@@ -45,7 +36,7 @@ func SearchSkillsEndpoint(svc Service) endpoint.Endpoint {
 }
 
 type FindSkillRequest struct {
-	ID string `json:"id"`
+	Name string `json:"name"`
 }
 
 func FindSkillEndpoint(svc Service) endpoint.Endpoint {
@@ -55,6 +46,6 @@ func FindSkillEndpoint(svc Service) endpoint.Endpoint {
 			return nil, errors.New("invalid request type")
 		}
 
-		return svc.FindSkill(ctx, req.ID)
+		return svc.FindSkill(ctx, req.Name)
 	}
 }

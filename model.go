@@ -8,14 +8,12 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/flarexio/grimoire/skill"
 	"github.com/flarexio/grimoire/vector"
 )
 
 var (
-	ErrSkillNotFound        = errors.New("skill not found")
-	ErrNoSkillsFound        = errors.New("no skills found")
-	ErrVectorDBNotSet       = errors.New("vector database not set")
-	ErrInvalidSkillDocument = errors.New("invalid skill document")
+	ErrVectorDBNotSet = errors.New("vector database not set")
 )
 
 type Config struct {
@@ -23,62 +21,42 @@ type Config struct {
 	Vector    vector.Config `yaml:"vector"`
 }
 
-type Skill struct {
-	ID             string   `json:"id" yaml:"id"`
-	Name           string   `json:"name" yaml:"name"`
-	Description    string   `json:"description" yaml:"description"`
-	Category       string   `json:"category" yaml:"category"`
-	Tags           []string `json:"tags" yaml:"tags"`
-	Prompt         string   `json:"prompt" yaml:"prompt"`
-	SuggestedTools []string `json:"suggested_tools" yaml:"suggestedTools"`
-}
-
-// Store defines the interface for loading skills from a backend.
-type Store interface {
-	LoadSkills() ([]Skill, error)
-}
-
-func SkillToDocument(skill Skill) vector.Document {
+func SkillToDocument(s skill.Skill) vector.Document {
 	return vector.Document{
-		ID:       generateDocumentID(skill),
-		Content:  buildSearchContent(skill),
-		Metadata: buildMetadata(skill),
+		ID:       generateDocumentID(s),
+		Content:  buildSearchContent(s),
+		Metadata: buildMetadata(s),
 	}
 }
 
-func generateDocumentID(skill Skill) string {
-	data := fmt.Sprintf("%s|%s|%s", skill.ID, skill.Name, skill.Description)
+func generateDocumentID(s skill.Skill) string {
+	data := fmt.Sprintf("%s|%s|%s", s.ID, s.Name, s.Description)
 	hash := sha256.Sum256([]byte(data))
 	return "skill_" + hex.EncodeToString(hash[:12])
 }
 
-func buildSearchContent(skill Skill) string {
-	parts := []string{skill.Name}
+func buildSearchContent(s skill.Skill) string {
+	parts := []string{s.Name}
 
-	if skill.Description != "" {
-		parts = append(parts, skill.Description)
+	if s.Description != "" {
+		parts = append(parts, s.Description)
 	}
 
-	if skill.Category != "" {
-		parts = append(parts, skill.Category)
-	}
-
-	if len(skill.Tags) > 0 {
-		parts = append(parts, strings.Join(skill.Tags, " "))
+	if len(s.Tags) > 0 {
+		parts = append(parts, strings.Join(s.Tags, " "))
 	}
 
 	return strings.Join(parts, " ")
 }
 
-func buildMetadata(skill Skill) map[string]string {
+func buildMetadata(s skill.Skill) map[string]string {
 	metadata := map[string]string{
-		"skill_id":    skill.ID,
-		"skill_name":  skill.Name,
-		"description": skill.Description,
-		"category":    skill.Category,
+		"skill_id":    s.ID,
+		"skill_name":  s.Name,
+		"description": s.Description,
 	}
 
-	if bs, err := json.Marshal(skill); err == nil {
+	if bs, err := json.Marshal(s); err == nil {
 		metadata["skill_json"] = string(bs)
 	}
 

@@ -10,6 +10,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 
 	"github.com/flarexio/grimoire"
+	"github.com/flarexio/grimoire/skill"
 )
 
 type JSONRPCRequest struct {
@@ -41,7 +42,7 @@ const MCPSERVER_INSTRUCTIONS string = `Grimoire is a skill discovery server that
 Available tools:
 - search_skills: Find skills using natural language queries (semantic search)
 - find_skill: Get the full details of a specific skill including its prompt and suggested tools
-- list_skills: Browse all available skills, optionally filtered by category
+- list_skills: Browse all available skills
 
 Workflow:
 1. Use search_skills to find relevant skills for your task
@@ -117,29 +118,23 @@ func ListToolsEndpoint(svc grimoire.Service) MCPEndpoint {
 			},
 			{
 				Name:        "find_skill",
-				Description: "Get the full details of a specific skill by its ID, including the prompt template and suggested tools.",
+				Description: "Find a specific skill by its name, including the prompt template and suggested tools.",
 				InputSchema: mcp.ToolInputSchema{
 					Type: "object",
 					Properties: map[string]any{
-						"id": map[string]any{
+						"name": map[string]any{
 							"type":        "string",
-							"description": "The unique identifier of the skill",
+							"description": "The name of the skill to find",
 						},
 					},
-					Required: []string{"id"},
+					Required: []string{"name"},
 				},
 			},
 			{
 				Name:        "list_skills",
-				Description: "List all available skills, optionally filtered by category.",
+				Description: "List all available skills.",
 				InputSchema: mcp.ToolInputSchema{
 					Type: "object",
-					Properties: map[string]any{
-						"category": map[string]any{
-							"type":        "string",
-							"description": "Filter skills by category (optional)",
-						},
-					},
 				},
 			},
 		}
@@ -226,17 +221,17 @@ func handleSearchSkills(ctx context.Context, svc grimoire.Service, args map[stri
 }
 
 func handleFindSkill(ctx context.Context, svc grimoire.Service, args map[string]any) *mcp.CallToolResult {
-	id, _ := args["id"].(string)
-	if id == "" {
+	name, _ := args["name"].(string)
+	if name == "" {
 		return &mcp.CallToolResult{
 			IsError: true,
 			Content: []mcp.Content{
-				mcp.NewTextContent("id parameter is required"),
+				mcp.NewTextContent("name parameter is required"),
 			},
 		}
 	}
 
-	skill, err := svc.FindSkill(ctx, id)
+	skill, err := svc.FindSkill(ctx, name)
 	if err != nil {
 		return &mcp.CallToolResult{
 			IsError: true,
@@ -254,9 +249,7 @@ func handleFindSkill(ctx context.Context, svc grimoire.Service, args map[string]
 }
 
 func handleListSkills(ctx context.Context, svc grimoire.Service, args map[string]any) *mcp.CallToolResult {
-	category, _ := args["category"].(string)
-
-	skills, err := svc.ListSkills(ctx, category)
+	skills, err := svc.ListSkills(ctx)
 	if err != nil {
 		return &mcp.CallToolResult{
 			IsError: true,
@@ -273,7 +266,7 @@ func handleListSkills(ctx context.Context, svc grimoire.Service, args map[string
 	}
 }
 
-func formatSkillsList(skills []grimoire.Skill) string {
+func formatSkillsList(skills []skill.Skill) string {
 	var sb strings.Builder
 
 	for i, skill := range skills {
@@ -284,7 +277,7 @@ func formatSkillsList(skills []grimoire.Skill) string {
 		fmt.Fprintf(&sb, "ID: %s\n", skill.ID)
 		fmt.Fprintf(&sb, "Name: %s\n", skill.Name)
 		fmt.Fprintf(&sb, "Description: %s\n", skill.Description)
-		fmt.Fprintf(&sb, "Category: %s\n", skill.Category)
+
 
 		if len(skill.Tags) > 0 {
 			fmt.Fprintf(&sb, "Tags: %s\n", strings.Join(skill.Tags, ", "))
@@ -298,13 +291,12 @@ func formatSkillsList(skills []grimoire.Skill) string {
 	return sb.String()
 }
 
-func formatSkillDetail(skill *grimoire.Skill) string {
+func formatSkillDetail(skill *skill.Skill) string {
 	var sb strings.Builder
 
 	fmt.Fprintf(&sb, "ID: %s\n", skill.ID)
 	fmt.Fprintf(&sb, "Name: %s\n", skill.Name)
 	fmt.Fprintf(&sb, "Description: %s\n", skill.Description)
-	fmt.Fprintf(&sb, "Category: %s\n", skill.Category)
 
 	if len(skill.Tags) > 0 {
 		fmt.Fprintf(&sb, "Tags: %s\n", strings.Join(skill.Tags, ", "))

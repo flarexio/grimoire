@@ -1,7 +1,6 @@
 id: deploy_k8s
 name: Deploy to Kubernetes
 description: Guide the deployment process to a Kubernetes cluster
-category: devops
 tags: [kubernetes, deploy, k8s, container]
 suggestedTools:
   - kubectl_apply

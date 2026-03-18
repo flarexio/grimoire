@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-kit/kit/endpoint"
@@ -11,16 +12,8 @@ import (
 
 func ListSkillsHandler(endpoint endpoint.Endpoint) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var req grimoire.ListSkillsRequest
-		if err := c.ShouldBindQuery(&req); err != nil {
-			c.String(http.StatusBadRequest, err.Error())
-			c.Error(err)
-			c.Abort()
-			return
-		}
-
 		ctx := c.Request.Context()
-		resp, err := endpoint(ctx, req)
+		resp, err := endpoint(ctx, nil)
 		if err != nil {
 			c.String(http.StatusExpectationFailed, err.Error())
 			c.Error(err)
@@ -34,12 +27,12 @@ func ListSkillsHandler(endpoint endpoint.Endpoint) gin.HandlerFunc {
 
 func SearchSkillsHandler(endpoint endpoint.Endpoint) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var req grimoire.SearchSkillsRequest
-		if err := c.ShouldBindQuery(&req); err != nil {
-			c.String(http.StatusBadRequest, err.Error())
-			c.Error(err)
-			c.Abort()
-			return
+		query := c.Query("query")
+		k, _ := strconv.Atoi(c.Query("k"))
+
+		req := grimoire.SearchSkillsRequest{
+			Query: query,
+			K:     k,
 		}
 
 		ctx := c.Request.Context()
@@ -57,10 +50,10 @@ func SearchSkillsHandler(endpoint endpoint.Endpoint) gin.HandlerFunc {
 
 func FindSkillHandler(endpoint endpoint.Endpoint) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id := c.Param("id")
+		name := c.Param("name")
 
 		ctx := c.Request.Context()
-		resp, err := endpoint(ctx, grimoire.FindSkillRequest{ID: id})
+		resp, err := endpoint(ctx, grimoire.FindSkillRequest{Name: name})
 		if err != nil {
 			c.String(http.StatusExpectationFailed, err.Error())
 			c.Error(err)

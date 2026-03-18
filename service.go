@@ -6,19 +6,20 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/flarexio/grimoire/skill"
 	"github.com/flarexio/grimoire/vector"
 )
 
 type Service interface {
 	Close() error
-	ListSkills(ctx context.Context, category string) ([]Skill, error)
-	SearchSkills(ctx context.Context, query string, k ...int) ([]Skill, error)
-	FindSkill(ctx context.Context, id string) (*Skill, error)
+	ListSkills(ctx context.Context) ([]skill.Skill, error)
+	SearchSkills(ctx context.Context, query string, k ...int) ([]skill.Skill, error)
+	FindSkill(ctx context.Context, name string) (*skill.Skill, error)
 }
 
 type ServiceMiddleware func(Service) Service
 
-func NewService(ctx context.Context, store Store, vectorDB vector.VectorDB, cfg Config) (Service, error) {
+func NewService(ctx context.Context, repo skill.Repository, vectorDB vector.VectorDB, cfg Config) (Service, error) {
 	log := zap.L().With(
 		zap.String("service", "grimoire"),
 	)
@@ -26,10 +27,10 @@ func NewService(ctx context.Context, store Store, vectorDB vector.VectorDB, cfg 
 	ctx, cancel := context.WithCancel(ctx)
 
 	svc := &service{
-		skills: make(map[string]Skill),
-		log:    log,
-		ctx:    ctx,
-		cancel: cancel,
+		skillsByName: make(map[string]skill.Skill),
+		log:          log,
+		ctx:          ctx,
+		cancel:       cancel,
 	}
 
 	if vectorDB != nil {
@@ -42,20 +43,22 @@ func NewService(ctx context.Context, store Store, vectorDB vector.VectorDB, cfg 
 		svc.collection = collection
 	}
 
-	skills, err := store.LoadSkills()
+	skills, err := repo.LoadSkills()
 	if err != nil {
 		cancel()
 		return nil, err
 	}
 
-	svc.indexSkills(ctx, skills)
+	svc.skills = skills
+	svc.indexSkills(ctx)
 
 	return svc, nil
 }
 
 type service struct {
-	skills     map[string]Skill
-	collection vector.Collection
+	skills       []skill.Skill
+	skillsByName map[string]skill.Skill
+	collection   vector.Collection
 
 	log    *zap.Logger
 	ctx    context.Context
@@ -71,20 +74,20 @@ func (svc *service) Close() error {
 	return nil
 }
 
-func (svc *service) indexSkills(ctx context.Context, skills []Skill) {
+func (svc *service) indexSkills(ctx context.Context) {
 	log := svc.log.With(
 		zap.String("action", "index_skills"),
 	)
 
-	for _, skill := range skills {
+	for _, s := range svc.skills {
 		log := log.With(
-			zap.String("skill_id", skill.ID),
+			zap.String("skill_id", s.ID),
 		)
 
-		svc.skills[skill.ID] = skill
+		svc.skillsByName[s.Name] = s
 
 		if svc.collection != nil {
-			doc := SkillToDocument(skill)
+			doc := SkillToDocument(s)
 			existingDoc, err := svc.collection.FindDocument(ctx, doc.ID)
 			if err != nil || existingDoc.ID != doc.ID {
 				if err := svc.collection.AddDocument(ctx, doc); err != nil {
@@ -97,28 +100,18 @@ func (svc *service) indexSkills(ctx context.Context, skills []Skill) {
 		}
 	}
 
-	log.Info("skills indexed", zap.Int("count", len(skills)))
+	log.Info("skills indexed", zap.Int("count", len(svc.skills)))
 }
 
-func (svc *service) ListSkills(ctx context.Context, category string) ([]Skill, error) {
-	skills := make([]Skill, 0, len(svc.skills))
-
-	for _, skill := range svc.skills {
-		if category != "" && skill.Category != category {
-			continue
-		}
-
-		skills = append(skills, skill)
+func (svc *service) ListSkills(ctx context.Context) ([]skill.Skill, error) {
+	if len(svc.skills) == 0 {
+		return nil, skill.ErrNoSkillsFound
 	}
 
-	if len(skills) == 0 {
-		return nil, ErrNoSkillsFound
-	}
-
-	return skills, nil
+	return svc.skills, nil
 }
 
-func (svc *service) SearchSkills(ctx context.Context, query string, k ...int) ([]Skill, error) {
+func (svc *service) SearchSkills(ctx context.Context, query string, k ...int) ([]skill.Skill, error) {
 	if svc.collection == nil {
 		return nil, ErrVectorDBNotSet
 	}
@@ -134,32 +127,32 @@ func (svc *service) SearchSkills(ctx context.Context, query string, k ...int) ([
 	}
 
 	if len(docs) == 0 {
-		return nil, ErrNoSkillsFound
+		return nil, skill.ErrNoSkillsFound
 	}
 
-	skills := make([]Skill, len(docs))
+	skills := make([]skill.Skill, len(docs))
 	for i, doc := range docs {
 		skillJSON, ok := doc.Metadata["skill_json"]
 		if !ok {
-			return nil, ErrInvalidSkillDocument
+			return nil, skill.ErrInvalidSkillDocument
 		}
 
-		var skill Skill
-		if err := json.Unmarshal([]byte(skillJSON), &skill); err != nil {
+		var s skill.Skill
+		if err := json.Unmarshal([]byte(skillJSON), &s); err != nil {
 			return nil, err
 		}
 
-		skills[i] = skill
+		skills[i] = s
 	}
 
 	return skills, nil
 }
 
-func (svc *service) FindSkill(ctx context.Context, id string) (*Skill, error) {
-	skill, ok := svc.skills[id]
+func (svc *service) FindSkill(ctx context.Context, name string) (*skill.Skill, error) {
+	s, ok := svc.skillsByName[name]
 	if !ok {
-		return nil, ErrSkillNotFound
+		return nil, skill.ErrSkillNotFound
 	}
 
-	return &skill, nil
+	return &s, nil
 }

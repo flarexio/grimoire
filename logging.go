@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"go.uber.org/zap"
+
+	"github.com/flarexio/grimoire/skill"
 )
 
 func LoggingMiddleware(log *zap.Logger) ServiceMiddleware {
@@ -41,16 +43,12 @@ func (mw *loggingMiddleware) Close() error {
 	return nil
 }
 
-func (mw *loggingMiddleware) ListSkills(ctx context.Context, category string) ([]Skill, error) {
+func (mw *loggingMiddleware) ListSkills(ctx context.Context) ([]skill.Skill, error) {
 	log := mw.log.With(
 		zap.String("action", "list_skills"),
 	)
 
-	if category != "" {
-		log = log.With(zap.String("category", category))
-	}
-
-	skills, err := mw.next.ListSkills(ctx, category)
+	skills, err := mw.next.ListSkills(ctx)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
@@ -60,7 +58,7 @@ func (mw *loggingMiddleware) ListSkills(ctx context.Context, category string) ([
 	return skills, nil
 }
 
-func (mw *loggingMiddleware) SearchSkills(ctx context.Context, query string, k ...int) ([]Skill, error) {
+func (mw *loggingMiddleware) SearchSkills(ctx context.Context, query string, k ...int) ([]skill.Skill, error) {
 	log := mw.log.With(
 		zap.String("action", "search_skills"),
 		zap.String("query", query),
@@ -80,18 +78,18 @@ func (mw *loggingMiddleware) SearchSkills(ctx context.Context, query string, k .
 	return skills, nil
 }
 
-func (mw *loggingMiddleware) FindSkill(ctx context.Context, id string) (*Skill, error) {
+func (mw *loggingMiddleware) FindSkill(ctx context.Context, name string) (*skill.Skill, error) {
 	log := mw.log.With(
-		zap.String("action", "get_skill"),
-		zap.String("skill_id", id),
+		zap.String("action", "find_skill"),
+		zap.String("skill_name", name),
 	)
 
-	skill, err := mw.next.FindSkill(ctx, id)
+	s, err := mw.next.FindSkill(ctx, name)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
 	}
 
 	log.Info("skill retrieved")
-	return skill, nil
+	return s, nil
 }

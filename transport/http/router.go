@@ -14,7 +14,7 @@ func AddRouters(r *gin.Engine, endpoints grimoire.EndpointSet) {
 	{
 		api.GET("/skills", ListSkillsHandler(endpoints.ListSkills))
 		api.GET("/skills/search", SearchSkillsHandler(endpoints.SearchSkills))
-		api.GET("/skills/:id", FindSkillHandler(endpoints.FindSkill))
+		api.GET("/skills/:name", FindSkillHandler(endpoints.FindSkill))
 	}
 }
 

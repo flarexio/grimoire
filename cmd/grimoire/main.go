@@ -18,7 +18,7 @@ import (
 	"github.com/flarexio/grimoire/persistence/chromem"
 
 	mcpE "github.com/flarexio/grimoire/mcp"
-	yamlStore "github.com/flarexio/grimoire/store/yaml"
+	skillRepo "github.com/flarexio/grimoire/persistence/yaml"
 	httpT "github.com/flarexio/grimoire/transport/http"
 )
 
@@ -88,9 +88,9 @@ func run(ctx context.Context, cmd *cli.Command) error {
 		return err
 	}
 
-	store := yamlStore.NewStore(cfg.SkillsDir)
+	repo := skillRepo.NewSkillRepository(cfg.SkillsDir)
 
-	svc, err := grimoire.NewService(ctx, store, vectorDB, cfg)
+	svc, err := grimoire.NewService(ctx, repo, vectorDB, cfg)
 	if err != nil {
 		return err
 	}

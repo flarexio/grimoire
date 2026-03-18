@@ -1,7 +1,6 @@
 id: analyze_code
 name: Analyze Code Quality
 description: Analyze code quality and generate a structured report with improvement suggestions
-category: development
 tags: [code, quality, lint, review]
 suggestedTools:
   - read_file
