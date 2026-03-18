@@ -1,0 +1,18 @@
+id: deploy_k8s
+name: Deploy to Kubernetes
+description: Guide the deployment process to a Kubernetes cluster
+category: devops
+tags: [kubernetes, deploy, k8s, container]
+suggestedTools:
+  - kubectl_apply
+  - kubectl_get
+  - docker_build
+prompt: |
+  Please follow these steps to deploy to Kubernetes:
+  1. Use docker_build to build the container image
+  2. Use kubectl_apply to apply the deployment manifest
+  3. Use kubectl_get to verify the deployment status
+  4. Report the deployment result including:
+     - Pod status
+     - Service endpoints
+     - Any warnings or errors

@@ -1,0 +1,16 @@
+id: analyze_code
+name: Analyze Code Quality
+description: Analyze code quality and generate a structured report with improvement suggestions
+category: development
+tags: [code, quality, lint, review]
+suggestedTools:
+  - read_file
+  - run_linter
+prompt: |
+  Please analyze the code quality following these steps:
+  1. Use read_file to read the target files
+  2. Use run_linter to perform static analysis
+  3. Review the results and provide:
+     - A summary of code quality
+     - Key issues found (categorized by severity)
+     - Specific improvement suggestions with code examples

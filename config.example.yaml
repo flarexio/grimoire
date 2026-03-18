@@ -1,0 +1,5 @@
+skillsDir: skills
+vector:
+  enabled: true
+  persistent: true
+  collection: skills
