@@ -28,10 +28,10 @@ jobs:
         uses: flarexio/claude-runner@main
         with:
           prompt: |
-            Find all REVIEW.md files in this repository and read them.
-            Apply the root REVIEW.md as global guidelines, and each subdirectory's REVIEW.md
-            as additional guidelines scoped to that directory.
-            Then review this pull request accordingly.
+            Review all changed files in this repository.
+            Before reviewing, search for all REVIEW.md files. If found, apply the root
+            REVIEW.md as global review guidelines and each subdirectory's REVIEW.md as
+            additional guidelines scoped to that directory.
             Provide a concise summary of findings. If the code looks good, say so briefly.
           repo: ${{ github.server_url }}/${{ github.repository }}.git
           ref: ${{ github.head_ref }}
