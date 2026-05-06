@@ -1,11 +1,18 @@
 # Grimoire
 
-Grimoire is a skill discovery server that exposes reusable prompt workflows as MCP tools. LLM agents can search for relevant skills, retrieve step-by-step instructions, and then execute the suggested tools via [MCPBlade](https://github.com/flarexio/mcpblade) or other MCP servers.
+> **Development paused.**
+>
+> This repository is kept as a small experiment in agent-oriented skill
+> discovery. Current work has shifted toward domain-driven AI applications,
+> where AI capabilities are designed directly into product workflows rather than
+> discovered as runtime skills.
+
+Grimoire is a skill discovery server that exposes reusable prompt workflows as MCP tools. AI agents can search for relevant skills, retrieve step-by-step instructions, and then execute the suggested tools via [MCPBlade](https://github.com/flarexio/mcpblade) or other MCP servers.
 
 ## How It Works
 
 ```
-LangChain Agent
+AI Agent
     │
     ├── grimoire (knowledge layer)
     │   └── search_skills("deploy to k8s") → skill with prompt + suggested tools
