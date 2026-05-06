@@ -24,8 +24,7 @@ jobs:
         run: go test -v ./...
 
       - name: Code Review with Claude
-        if: github.event_name == 'pull_request'
-        uses: flarexio/claude-runner@main
+        uses: flarexio/claude-runner@v1
         with:
           prompt: |
             Review all changed files in this repository.
@@ -34,7 +33,19 @@ jobs:
             additional guidelines scoped to that directory.
             Provide a concise summary of findings. If the code looks good, say so briefly.
           repo: ${{ github.server_url }}/${{ github.repository }}.git
-          ref: ${{ github.head_ref }}
+          ref: ${{ github.head_ref || github.ref_name }}
+          base-ref: ${{ github.base_ref }}
+          event: ${{ github.event_name }}
+          pr-number: ${{ github.event.pull_request.number || '' }}
           nats-creds-content: ${{ secrets.NATS_CREDS }}
           edge-id: ${{ secrets.EDGE_ID }}
+          output-file: claude-output.md
 
+      - name: Add Claude review to summary
+        if: always()
+        run: |
+          if [ -f claude-output.md ]; then
+            echo "## Claude Review" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            cat claude-output.md >> "$GITHUB_STEP_SUMMARY"
+          fi
